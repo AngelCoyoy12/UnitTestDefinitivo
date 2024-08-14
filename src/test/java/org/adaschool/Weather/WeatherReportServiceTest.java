@@ -1,20 +1,20 @@
 package org.adaschool.Weather;
 
-import static org.mockito.Mockito.*;
-import static org.junit.jupiter.api.Assertions.*;
-
-import org.adaschool.Weather.service.WeatherReportService;
 import org.adaschool.Weather.data.WeatherApiResponse;
+import org.adaschool.Weather.data.WeatherApiResponse.Main;
 import org.adaschool.Weather.data.WeatherReport;
+import org.adaschool.Weather.service.WeatherReportService;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.MockitoAnnotations;
 import org.springframework.web.client.RestTemplate;
-import org.junit.jupiter.api.extension.ExtendWith;
 
-@ExtendWith(MockitoExtension.class)
-public class WeatherReportServiceTest {
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.*;
+
+class WeatherReportServiceTest {
 
     @Mock
     private RestTemplate restTemplate;
@@ -22,25 +22,34 @@ public class WeatherReportServiceTest {
     @InjectMocks
     private WeatherReportService weatherReportService;
 
+    @BeforeEach
+    void setUp() {
+        MockitoAnnotations.openMocks(this);
+    }
+
     @Test
     void testGetWeatherReport() {
         // Datos de prueba
-        WeatherApiResponse.Main mockMain = new WeatherApiResponse.Main();
-        mockMain.setTemperature(25.5);
-        mockMain.setHumidity(60.0);
+        double latitude = 10.0;
+        double longitude = 20.0;
 
-        WeatherApiResponse mockResponse = new WeatherApiResponse();
-        mockResponse.setMain(mockMain);
+        // Crear una respuesta simulada de la API
+        WeatherApiResponse response = new WeatherApiResponse();
+        Main main = new Main();
+        main.setTemperature(25.0);
+        main.setHumidity(60.0);
+        response.setMain(main);
 
-        // Configuración del mock
-        String url = "https://api.openweathermap.org/data/2.5/weather?lat=37.8267&lon=-122.4233&appid=aeb07a35fc7d2fc788ab33e2211664a9";
-        when(restTemplate.getForObject(eq(url), eq(WeatherApiResponse.class))).thenReturn(mockResponse);
+        // Configurar el mock para devolver la respuesta simulada
+        String url = "https://api.openweathermap.org/data/2.5/weather?lat=" + latitude + "&lon=" + longitude + "&appid=aeb07a35fc7d2fc788ab33e2211664a9";
+        when(restTemplate.getForObject(url, WeatherApiResponse.class)).thenReturn(response);
 
-        // Llamada al método y validación
-        WeatherReport report = weatherReportService.getWeatherReport(37.8267, -122.4233);
+        // Llamar al método que se está probando
+        WeatherReport report = weatherReportService.getWeatherReport(latitude, longitude);
 
-        assertNotNull(report);
-        assertEquals(25.5, report.getTemperature(), 0.01);
-        assertEquals(60.0, report.getHumidity(), 0.01);
+        assertEquals(25.0, report.getTemperature());
+        assertEquals(60.0, report.getHumidity());
+
+        verify(restTemplate, times(1)).getForObject(url, WeatherApiResponse.class);
     }
 }
